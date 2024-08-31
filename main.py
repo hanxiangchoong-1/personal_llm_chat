@@ -5,6 +5,7 @@ from prompts import prompts
 from AzureOpenAIClient import AzureOpenAIClient
 from utils import get_current_time, count_words_in_conversation, create_conversational_prompt
 from streamlit_components.es import save_conversation, load_conversation, get_elasticsearch_results, create_RAG_context, get_valid_indices
+from valid_indices import valid_index_list
 from dotenv import load_dotenv
 import json
 from datetime import datetime
@@ -23,7 +24,6 @@ def set_page_container_style():
         """,
         unsafe_allow_html=True,
     )
-
 
 # Elasticsearch setup
 es_endpoint = os.environ.get("ELASTIC_ENDPOINT")
@@ -96,14 +96,7 @@ with st.sidebar:
 
     rag_mode = st.checkbox("RAG Mode")
     
-    if rag_mode:
-        # Define the list of valid indices
-        valid_index_list = [
-            "standard_chartered_half_year_2024",
-            "standard_chartered_news_releases_2023_2024",
-            # Add more indices as needed
-        ]
-        
+    if rag_mode:        
         # Get list of valid indices that exist and have documents
         valid_indices = get_valid_indices(es_client, valid_index_list)
         
@@ -116,7 +109,6 @@ with st.sidebar:
 
 
 # CHAT WINDOW 
-# with main_content:
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 

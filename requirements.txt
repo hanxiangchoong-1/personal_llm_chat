@@ -1,0 +1,4 @@
+elastic-transport==8.13.1
+elasticsearch==8.14.0
+streamlit==1.37.1
+openai==1.35.13
