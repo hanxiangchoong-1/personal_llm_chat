@@ -4,11 +4,12 @@ from elasticsearch import Elasticsearch
 from prompts import prompts
 from AzureOpenAIClient import AzureOpenAIClient
 from utils import get_current_time, count_words_in_conversation, create_conversational_prompt
-from streamlit_components.es import save_conversation, load_conversation
+from streamlit_components.es import save_conversation, load_conversation, get_elasticsearch_results, create_RAG_context, get_valid_indices
 from dotenv import load_dotenv
 import json
 from datetime import datetime
 load_dotenv()
+
 
 # Elasticsearch setup
 es_endpoint = os.environ.get("ELASTIC_ENDPOINT")
@@ -40,7 +41,7 @@ system_prompt = st.sidebar.radio(
 
 total_word_count = count_words_in_conversation(st.session_state.get('messages', []), len(st.session_state.get('messages', [])))
 
-conversation_length = st.sidebar.slider("Conversation History Length", min_value=1, max_value=20, value=10, step=1)
+conversation_length = st.sidebar.slider("Conversation History Length", min_value=1, max_value=30, value=10, step=1)
 
 word_count = count_words_in_conversation(st.session_state.get('messages', []), conversation_length)
 st.sidebar.markdown(f"""
@@ -54,6 +55,7 @@ st.sidebar.markdown(f"""
     """, unsafe_allow_html=True)
 
 # RIGHT SIDEBAR
+selected_indices=[]
 with right_options:
     st.title("Elasticsearch")
     if st.button("Clear Chat History"):
@@ -82,13 +84,22 @@ with right_options:
     rag_mode = st.checkbox("RAG Mode")
     
     if rag_mode:
-        # Get list of indices
-        indices = es_client.cat.indices(format="json")
-        index_names = [index['index'] for index in indices if not index['index'].startswith('.')]
+        # Define the list of valid indices
+        valid_index_list = [
+            "standard_chartered_half_year_2024",
+            "standard_chartered_news_releases_2023_2024",
+            # Add more indices as needed
+        ]
         
-        selected_indices = st.multiselect("Select Elasticsearch Indices", index_names)
+        # Get list of valid indices that exist and have documents
+        valid_indices = get_valid_indices(es_client, valid_index_list)
         
-        es_size = st.slider("Elasticsearch Result Size", min_value=1, max_value=20, value=10, step=1)
+        if valid_indices:
+            selected_indices = st.multiselect("Select Elasticsearch Indices", valid_indices)
+            es_size = st.slider("Elasticsearch Result Size", min_value=1, max_value=20, value=10, step=1)
+        else:
+            st.warning("No valid indices found. RAG mode is disabled.")
+            rag_mode = False
 
 
 # CHAT WINDOW 
@@ -105,11 +116,20 @@ with main_content:
         with st.chat_message("user"):
             st.markdown(prompt)
             st.caption(f"Sent at {get_current_time()}")
-        st.session_state.messages.append({"role": "user", "content": prompt, "time": get_current_time()})
 
         with st.spinner("Generating Response..."):
+            
+            if rag_mode and selected_indices:
+                # RAG mode
+                elasticsearch_results = get_elasticsearch_results(es_client, prompt, selected_indices, es_size)
+                RAG_context = create_RAG_context(elasticsearch_results, prompt)
+                st.session_state.messages.append({"role": "user", "content": prompt, "RAG_context": RAG_context, "time": get_current_time()})
+            else:
+                st.session_state.messages.append({"role": "user", "content": prompt, "RAG_context": "", "time": get_current_time()})
+                
             conversation_prompt = create_conversational_prompt(st.session_state.messages, conversation_length=conversation_length)
+
             assistant_response = LLM.generate_streaming_response(conversation_prompt, model=model, system_prompt=prompts[system_prompt])
 
-        st.session_state.messages.append({"role": "assistant", "content": assistant_response, "time": get_current_time()})
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response, "RAG_context": "", "time": get_current_time()})
         st.rerun()
