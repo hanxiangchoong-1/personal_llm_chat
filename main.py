@@ -6,6 +6,7 @@ from AzureOpenAIClient import AzureOpenAIClient
 from utils import get_current_time, count_words_in_conversation, create_conversational_prompt
 from dotenv import load_dotenv
 import json
+from datetime import datetime
 load_dotenv()
 
 # Elasticsearch setup
@@ -67,15 +68,14 @@ with right_options:
 
     # Save button and popup
     if st.button("Save Conversation"):
-        st.session_state.show_popup = True
+        st.session_state.show_save_popup = True
 
-    if st.session_state.get('show_popup', False):
+    if st.session_state.get('show_save_popup', False):
         with st.form(key='save_form'):
             save_name = st.text_input("Enter a name for this conversation:")
             submit_button = st.form_submit_button(label='Save')
             
             if submit_button and save_name:
-                # Save conversation to Elasticsearch
                 conversation_data = {
                     "name": save_name,
                     "messages": st.session_state.messages,
@@ -88,8 +88,49 @@ with right_options:
                 except Exception as e:
                     st.error(f"Failed to save conversation: {str(e)}")
                 
-                st.session_state.show_popup = False
+                st.session_state.show_save_popup = False
                 st.rerun()
+
+    # Load button and popup
+    if st.button("Load Conversation"):
+        st.session_state.show_load_popup = True
+
+    if st.session_state.get('show_load_popup', False):
+        try:
+            # Fetch all conversations from Elasticsearch
+            if es_client.indices.exists(index=os.environ.get("ELASTIC_CONVO_INDEX_NAME")):
+                result = es_client.search(index=os.environ.get("ELASTIC_CONVO_INDEX_NAME"), body={"query": {"match_all": {}}, "size": 100})
+                conversations = result['hits']['hits']
+
+                if conversations:
+                    options = []
+                    for conv in conversations:
+                        name = conv['_source']['name']
+                        timestamp = conv['_source']['timestamp']
+                        options.append(f"{name} - {timestamp}")
+
+                    selected_conversation = st.selectbox("Select a conversation to load:", options)
+
+                    if st.button("Load Selected Conversation"):
+                        # Find the selected conversation in the results
+                        for conv in conversations:
+                            if f"{conv['_source']['name']} - {conv['_source']['timestamp']}" == selected_conversation:
+                                st.session_state.messages = conv['_source']['messages']
+                                st.success(f"Loaded conversation: {selected_conversation}")
+                                st.session_state.show_load_popup = False
+                                st.rerun()
+                                break
+                else:
+                    st.info("No saved conversations found.")
+            else:
+                st.info(f"The index {os.environ.get("ELASTIC_CONVO_INDEX_NAME")} doesn't exist. Saving a conversation will create it.")
+
+        except Exception as e:
+            st.error(f"Failed to load conversations: {str(e)}")
+
+        if st.button("Close"):
+            st.session_state.show_load_popup = False
+            st.rerun()
 
 # CHAT WINDOW 
 with main_content:

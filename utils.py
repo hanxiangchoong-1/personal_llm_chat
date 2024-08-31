@@ -1,7 +1,8 @@
 from datetime import datetime
+from datetime import timezone
 
 def get_current_time():
-    return datetime.now().strftime("%H:%M")
+    return datetime.now(timezone.utc).isoformat()
 
 def count_words_in_conversation(messages, conversation_length):
     word_count = 0
