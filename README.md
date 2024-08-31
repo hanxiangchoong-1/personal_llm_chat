@@ -30,12 +30,17 @@ AZURE_OPENAI_REGION="<AZURE OPENAI DEPLOYMENT REGION>"
 AZURE_OPENAI_ENDPOINT="<AZURE OPENAI DEPLOYMENT ENDPOINT>"
 ```
 
-To setup RAG mode, navigate to `valid_indices.py` and add index names to the `valid_index_list`:
+To setup RAG mode, navigate to `settings.py` and add index names to the `valid_index_list`:
 ```
 valid_index_list = [
             "elastic_example_index",
             # Add indices manually
         ]
+```
+
+Also add your Azure OpenAI LLM deployment names to `LLM_list`
+```
+LLM_list=("gpt-4o", "gpt-4o-mini")
 ```
 
 Run the following command to start the app. Happy chatting!

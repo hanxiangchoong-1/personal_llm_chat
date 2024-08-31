@@ -5,7 +5,7 @@ from prompts import prompts
 from AzureOpenAIClient import AzureOpenAIClient
 from utils import get_current_time, count_words_in_conversation, create_conversational_prompt
 from streamlit_components.es import save_conversation, load_conversation, get_elasticsearch_results, create_RAG_context, get_valid_indices
-from valid_indices import valid_index_list
+from settings import LLM_list, valid_index_list
 from dotenv import load_dotenv
 import json
 from datetime import datetime
@@ -45,7 +45,7 @@ with st.sidebar:
 
     model = st.radio(
         "Select LLM",
-        ("gpt-4o", "gpt-4o-mini"),
+        LLM_list,
         index=0
     )
 
