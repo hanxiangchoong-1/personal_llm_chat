@@ -25,12 +25,15 @@ def set_page_container_style():
         unsafe_allow_html=True,
     )
 
-# Elasticsearch setup
-es_endpoint = os.environ.get("ELASTIC_ENDPOINT")
-es_client = Elasticsearch(
-    es_endpoint,
-    api_key=os.environ.get("ELASTIC_API_KEY")
-)
+try:
+    # Elasticsearch setup
+    es_endpoint = os.environ.get("ELASTIC_ENDPOINT")
+    es_client = Elasticsearch(
+        es_endpoint,
+        api_key=os.environ.get("ELASTIC_API_KEY")
+    )
+except Exception as e:
+    es_client=None
 
 LLM = AzureOpenAIClient()
 
