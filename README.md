@@ -18,14 +18,27 @@ pip install -r requirements.txt
 
 Create a .env file and fill out the following:
 
-```
+```bash
 ELASTIC_ENDPOINT="<YOUR ELASTIC CLOUD ENDPOINT>"
 ELASTIC_API_KEY="<YOUR ELASTIC CLOUD API KEY>"
 ELASTIC_CONVO_INDEX_NAME="<YOUR ELASTIC CLOUD API KEY>"
-ELASTIC_MODEL_ID="elser_v2"
+ELASTIC_MODEL_ID="<YOUR ELASTIC INFERENCE API ID>""
 
-AZURE_OPENAI_KEY_1=""
-AZURE_OPENAI_KEY_2=""
-AZURE_OPENAI_REGION=""
-AZURE_OPENAI_ENDPOINT=""
+AZURE_OPENAI_KEY_1="<AZURE OPENAI API KEY #1>""
+AZURE_OPENAI_KEY_2="<AZURE OPENAI API KEY #2>""
+AZURE_OPENAI_REGION="<AZURE OPENAI DEPLOYMENT REGION>""
+AZURE_OPENAI_ENDPOINT="<AZURE OPENAI DEPLOYMENT ENDPOINT>""
+```
+
+To setup RAG mode, navigate to `valid_indices.py` and add index names to the `valid_index_list`:
+```
+valid_index_list = [
+            "elastic_example_index",
+            # Add indices manually
+        ]
+```
+
+Run the following command to start the app. Happy chatting!
+```
+streamlit run main.py
 ```
