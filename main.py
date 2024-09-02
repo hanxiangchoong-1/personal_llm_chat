@@ -11,6 +11,11 @@ import json
 from datetime import datetime
 load_dotenv()
 
+
+import openlit
+openlit.init(application_name="LLMChatApp",environment="Production")
+
+
 def set_page_container_style():
     st.markdown(
         f"""
